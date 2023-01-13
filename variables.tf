@@ -39,7 +39,7 @@ variable "mysql_version" {
   description = "The version of mysql: `MYSQL_5_7`, `MYSQL_8_0`"
   validation {
     condition     = var.mysql_version == "MYSQL_5_7" || var.mysql_version == "MYSQL_8_0"
-    error_message = "Specify the version of mysql: `MYSQL_5_7` or `MYSQL_8_0`."
+    error_message = "Specify the version of mysql: `MYSQL_5_7` or `MYSQL_8_0`"
   }
 }
 
