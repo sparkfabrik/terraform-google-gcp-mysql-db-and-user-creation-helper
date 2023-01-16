@@ -3,6 +3,9 @@
 if ! [ -x "$(command -v cloud_sql_proxy)" ]; then
     echo "Error: cloud_sql_proxy is not installed." >&2
     exit 1
+elif ! [ -x "$(command -v nc)" ]; then
+    echo "Error: Netcat is not installed." >&2
+    exit 1
 fi
 
 SERVICE="cloud_sql_proxy"
@@ -13,7 +16,7 @@ then
 fi
 
 for j in $(seq 1 10); do
-    READY=$(bash -c 'exec 3<> /dev/tcp/${CLOUD_SQL_PROXY_HOST}/${CLOUD_SQL_PROXY_PORT};echo $?' 2>/dev/null)
+    READY=$(sh -c 'nc -v ${CLOUD_SQL_PROXY_HOST} ${CLOUD_SQL_PROXY_PORT} </dev/null; echo $?;' 2>/dev/null)
     if [ "$READY" -eq 0 ]; then
         echo "Connection Ready"
         break
