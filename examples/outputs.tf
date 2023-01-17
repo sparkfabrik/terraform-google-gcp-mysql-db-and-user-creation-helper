@@ -1,9 +1,11 @@
-output "sql_users_password" {
+output "sql_admin_user_creds" {
   sensitive = true
-  value     = module.mysql_create_users_and_databases.sql_users_password
+  value     = {
+    admin = google_sql_user.admin_user_mysql.password
+  }
 }
 
-output "sql_user_admin_password" {
+output "sql_additional_users_credentials" {
   sensitive = true
-  value     = google_sql_user.admin_user_mysql.password
+  value     = module.mysql_additional_users_and_databases.sql_users_creds
 }

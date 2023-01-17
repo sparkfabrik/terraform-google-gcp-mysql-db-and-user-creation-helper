@@ -1,11 +1,11 @@
 resource "google_compute_network" "private_network" {
-  provider = google-beta
+  provider = google
   project  = var.project_id
   name     = "private-network"
 }
 
 resource "google_compute_global_address" "private_ip_address" {
-  provider      = google-beta
+  provider      = google
   project       = var.project_id
   name          = "private-ip-address"
   purpose       = "VPC_PEERING"
@@ -15,25 +15,30 @@ resource "google_compute_global_address" "private_ip_address" {
 }
 
 resource "google_service_networking_connection" "private_vpc_connection" {
-  provider = google-beta
+  provider = google
 
   network                 = google_compute_network.private_network.id
   service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
+  reserved_peering_ranges = [
+    google_compute_global_address.private_ip_address.name
+  ]
 }
 
 resource "random_id" "db_name_suffix" {
   byte_length = 4
 }
 
+# Create a CloudSQL MySQL 8 instance
 resource "google_sql_database_instance" "instance" {
-  provider            = google-beta
+  provider            = google
   project             = var.project_id
   name                = "private-instance-${random_id.db_name_suffix.hex}"
   region              = var.region
   database_version    = "MYSQL_8_0"
   deletion_protection = false
-  depends_on          = [google_service_networking_connection.private_vpc_connection]
+  depends_on          = [
+    google_service_networking_connection.private_vpc_connection
+  ]
 
   settings {
     disk_size = 10
@@ -48,18 +53,7 @@ resource "google_sql_database_instance" "instance" {
   }
 }
 
-module "gcp-mysql-db-and-user-creation-helper" {
-  source                            = "../"
-  cloud_sql_proxy_host              = "127.0.0.1"
-  google_sql_database_instance_name = google_sql_database_instance.instance8.name
-  database_setup                    = var.database_setup
-  sql_user_admin                    = google_sql_user.admin_user_mysql.name
-  sql_password_admin                = google_sql_user.admin_user_mysql.password
-  cloud_sql_proxy_port              = "1234"
-  mysql_version                     = google_sql_database_instance.instance.database_version
-  project_id                        = var.project_id
-  region                            = var.region
-}
+# Create admin credentials for MySQL.
 resource "random_password" "admin_sql_user_password_mysql" {
   length           = 24
   special          = true
@@ -68,8 +62,20 @@ resource "random_password" "admin_sql_user_password_mysql" {
 
 resource "google_sql_user" "admin_user_mysql" {
   project  = var.project_id
-  instance = google_sql_database_instance.instance8.name
+  instance = google_sql_database_instance.instance.name
   name     = "admin"
   password = random_password.admin_sql_user_password_mysql.result
   host     = "%"
+}
+
+# Add additional user and database using this this module.
+module "mysql_additional_users_and_databases" {
+  source                            = "sparkfabrik/gcp-mysql-db-and-user-creation-helper/sparkfabrik"
+  version                           = "~> 0.1"
+  project_id                        = var.project_id
+  region                            = var.region
+  database_and_user_list            = var.database_and_user_list
+  cloudsql_instance_name            = google_sql_database_instance.instance.name
+  cloudsql_privileged_user_name     = google_sql_user.admin_user_mysql.name
+  cloudsql_privileged_user_password = google_sql_user.admin_user_mysql.password
 }
