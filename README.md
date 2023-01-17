@@ -1,4 +1,4 @@
-# Terraform module for creating database and associated user on an existing CloudSQL instance
+# Terraform module for creating database and associated user on an existing Google CloudSQL instance
 
 This module creates database and users on an existing CloudSQL instance. The structure of the input variable is designed so that the database/user ratio is 1:1, so the module not only takes care of creating the database and its user, but also sets permissions on the user so that it has access to only the database for which it is responsible.
 
