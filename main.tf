@@ -1,14 +1,16 @@
 resource "null_resource" "execute_cloud_sql_proxy" {
-  for_each = (((var.cloud_sql_proxy_host == "localhost" || var.cloud_sql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? { for u in var.database_setup : u.user => u } : {})
+  for_each = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? {
+    for u in var.database_and_user_list : u.user => u
+  } : {})
   provisioner "local-exec" {
     command = templatefile(
       "${path.module}/scripts/execute_cloud_sql_proxy.sh",
       {
-        CLOUD_SQL_PROXY_HOST   = var.cloud_sql_proxy_host
         CLOUDSDK_CORE_PROJECT  = var.project_id
-        CLOUD_SQL_PROXY_PORT   = var.cloud_sql_proxy_port
+        CLOUDSQL_PROXY_HOST    = var.cloudsql_proxy_host
+        CLOUDSQL_PROXY_PORT    = var.cloudsql_proxy_port
         GCLOUD_PROJECT_REGION  = var.region
-        CLOUDSQL_INSTANCE_NAME = var.google_sql_database_instance_name
+        CLOUDSQL_INSTANCE_NAME = var.cloudsql_instance_name
       }
     )
     interpreter = [
@@ -17,24 +19,41 @@ resource "null_resource" "execute_cloud_sql_proxy" {
   }
 }
 
+# Retrieve Cloud SQL instance information (database type) with a data resource.
+data "google_sql_database_instance" "cloudsql_instance" {
+  name    = var.cloudsql_instance_name
+  project = var.project_id
+
+  lifecycle {
+
+    postcondition {
+      condition     = self.database_version == "MYSQL_5_7" || self.database_version == "MYSQL_8_0"
+      error_message = "Database version must be \"MYSQL_5_7\" or \"MYSQL_8_0\". Other versions are not supported."
+    }
+  }
+}
+
+# Generate a random password for each created user.
 resource "random_password" "sql_user_password" {
-  for_each         = { for u in var.database_setup : u.user => u }
+  for_each         = { for u in var.database_and_user_list : u.user => u }
   length           = 16
   special          = true
   override_special = "_%@"
 }
 
+# Create the databases.
 resource "google_sql_database" "sql_database" {
   project  = var.project_id
-  for_each = { for d in var.database_setup : d.database => d }
+  for_each = { for d in var.database_and_user_list : d.database => d }
   name     = each.value.database
-  instance = var.google_sql_database_instance_name
+  instance = var.cloudsql_instance_name
 }
 
+# Create the database users.
 resource "google_sql_user" "sql_user" {
   project  = var.project_id
-  for_each = { for u in var.database_setup : u.user => u }
-  instance = var.google_sql_database_instance_name
+  for_each = { for u in var.database_and_user_list : u.user => u }
+  instance = var.cloudsql_instance_name
   name     = each.value.user
   password = random_password.sql_user_password[each.value.user].result
   host     = "%"
@@ -43,16 +62,16 @@ resource "google_sql_user" "sql_user" {
     command = templatefile(
       "${path.module}/scripts/execute_sql.sh",
       {
-        CLOUD_SQL_PROXY_HOST   = var.cloud_sql_proxy_host
-        SQL_USER_ADMIN         = var.sql_user_admin
-        SQL_PASSWORD_ADMIN     = var.sql_password_admin
-        mysql_version          = var.mysql_version
-        USER                   = each.value.user
-        DATABASE               = each.value.database
-        CLOUDSDK_CORE_PROJECT  = var.project_id
-        CLOUD_SQL_PROXY_PORT   = var.cloud_sql_proxy_port
-        GCLOUD_PROJECT_REGION  = var.region
-        CLOUDSQL_INSTANCE_NAME = var.google_sql_database_instance_name
+        CLOUDSDK_CORE_PROJECT             = var.project_id
+        GCLOUD_PROJECT_REGION             = var.region
+        CLOUDSQL_INSTANCE_NAME            = var.cloudsql_instance_name
+        CLOUDSQL_PROXY_HOST               = var.cloudsql_proxy_host
+        CLOUDSQL_PROXY_PORT               = var.cloudsql_proxy_port
+        CLOUDSQL_PRIVILEGED_USER_NAME     = var.cloudsql_privileged_user_name
+        CLOUDSQL_PRIVILEGED_USER_PASSWORD = var.cloudsql_privileged_user_password
+        MYSQL_VERSION                     = data.google_sql_database_instance.cloudsql_instance.database_version
+        USER                              = each.value.user
+        DATABASE                          = each.value.database
       }
     )
     interpreter = [
@@ -66,7 +85,9 @@ resource "google_sql_user" "sql_user" {
 }
 
 resource "null_resource" "kill_cloud_sql_proxy" {
-  for_each = (((var.cloud_sql_proxy_host == "localhost" || var.cloud_sql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? { for u in var.database_setup : u.user => u } : {})
+  for_each = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? {
+    for u in var.database_and_user_list : u.user => u
+  } : {})
   provisioner "local-exec" {
     command = "${path.module}/scripts/kill_cloud_sql_proxy.sh"
     interpreter = [

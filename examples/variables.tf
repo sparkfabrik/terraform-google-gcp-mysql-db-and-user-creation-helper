@@ -1,6 +1,6 @@
 variable "project_id" {
   type    = string
-  default = "sf-platform-gka-playground"
+  default = "my-project"
 }
 
 variable "region" {
@@ -13,7 +13,7 @@ variable "zone" {
   default = "europe-west1-b"
 }
 
-variable "database_setup" {
+variable "database_and_user_list" {
   type = list(object({
     user     = string
     database = string

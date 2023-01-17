@@ -1,4 +1,4 @@
-database_setup = [
+database_and_user_list = [
   {
     database = "db1"
     user     = "user1"
