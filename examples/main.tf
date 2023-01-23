@@ -57,7 +57,7 @@ resource "google_sql_database_instance" "instance" {
 resource "random_password" "admin_sql_user_password_mysql" {
   length           = 24
   special          = true
-  override_special = "_%@"
+  override_special = "_~@"
 }
 
 resource "google_sql_user" "admin_user_mysql" {

@@ -38,7 +38,7 @@ resource "random_password" "sql_user_password" {
   for_each         = { for u in var.database_and_user_list : u.user => u }
   length           = 16
   special          = true
-  override_special = "_%@"
+  override_special = "_~@"
 }
 
 # Create the databases.
