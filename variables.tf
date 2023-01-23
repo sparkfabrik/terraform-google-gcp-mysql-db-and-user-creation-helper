@@ -41,11 +41,12 @@ variable "cloudsql_privileged_user_password" {
   description = "The password of the privileged user of the Cloud SQL instance"
 }
 
+# Optional value: refs https://developer.hashicorp.com/terraform/language/expressions/type-constraints#optional-object-type-attributes
 variable "database_and_user_list" {
   type = list(object({
-    user     = string
-    database = string
+    user      = string
+    user_host = optional(string, "%")
+    database  = string
   }))
-  description = "The list with all the databases and the relative user. Please not that you can assign only a database to a single user, the same user cannot be assigned to multiple databases."
+  description = "The list with all the databases and the relative user. Please not that you can assign only a database to a single user, the same user cannot be assigned to multiple databases. `user_host` is optional, has a default value of '%' to allow the user to connect from any host, or you can specify it for the given user for a more restrictive access."
 }
-

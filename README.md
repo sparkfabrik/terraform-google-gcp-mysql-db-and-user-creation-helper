@@ -21,7 +21,7 @@ In addition, the script must be able to connect to the CloudSQL instance. In cas
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.2 |
 | <a name="requirement_google"></a> [google](#requirement\_google) | >= 4.47.0 |
 | <a name="requirement_null"></a> [null](#requirement\_null) | >= 3.2.1 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.4.3 |
@@ -34,7 +34,7 @@ In addition, the script must be able to connect to the CloudSQL instance. In cas
 | <a name="input_cloudsql_privileged_user_password"></a> [cloudsql\_privileged\_user\_password](#input\_cloudsql\_privileged\_user\_password) | The password of the privileged user of the Cloud SQL instance | `string` | n/a | yes |
 | <a name="input_cloudsql_proxy_host"></a> [cloudsql\_proxy\_host](#input\_cloudsql\_proxy\_host) | The host of the Cloud SQL Auth Proxy; if a value other than localhost or 127.0.0.1 (default) is entered, it is assumed that there is a CloudSQL Auth Proxy instance defined and already configured outside this module, and therefore the proxy will not be launched. | `string` | `"127.0.0.1"` | no |
 | <a name="input_cloudsql_proxy_port"></a> [cloudsql\_proxy\_port](#input\_cloudsql\_proxy\_port) | Port of the Cloud SQL Auth Proxy | `string` | `"1234"` | no |
-| <a name="input_database_and_user_list"></a> [database\_and\_user\_list](#input\_database\_and\_user\_list) | The list with all the databases and the relative user. Please not that you can assign only a database to a single user, the same user cannot be assigned to multiple databases. | <pre>list(object({<br>    user     = string<br>    database = string<br>  }))</pre> | n/a | yes |
+| <a name="input_database_and_user_list"></a> [database\_and\_user\_list](#input\_database\_and\_user\_list) | The list with all the databases and the relative user. Please not that you can assign only a database to a single user, the same user cannot be assigned to multiple databases. `user_host` is optional, has a default value of '%' to allow the user to connect from any host, or you can specify it for the given user for a more restrictive access. | <pre>list(object({<br>    user      = string<br>    user_host = optional(string, "%")<br>    database  = string<br>  }))</pre> | n/a | yes |
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The ID of the project in which the resource belongs. | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | The region in which the resource belongs. | `string` | n/a | yes |
 | <a name="input_terraform_start_cloud_sql_proxy"></a> [terraform\_start\_cloud\_sql\_proxy](#input\_terraform\_start\_cloud\_sql\_proxy) | If `true` terraform will automatically start the Cloud SQL Proxy instance present in the filesystem at the condition that cloudsql\_proxy\_host is set to a supported value. If `false` you have to start the Cloud SQL Proxy manually. This variable is used to prevent the creation of a Cloud SQL Proxy instance even if cloudsql\_proxy\_host has a supported value. | `bool` | `true` | no |

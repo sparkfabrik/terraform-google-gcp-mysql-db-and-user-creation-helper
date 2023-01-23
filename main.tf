@@ -56,7 +56,7 @@ resource "google_sql_user" "sql_user" {
   instance = var.cloudsql_instance_name
   name     = each.value.user
   password = random_password.sql_user_password[each.value.user].result
-  host     = "%"
+  host     = each.value.user_host
 
   provisioner "local-exec" {
     command = templatefile(
@@ -71,6 +71,7 @@ resource "google_sql_user" "sql_user" {
         CLOUDSQL_PRIVILEGED_USER_PASSWORD = var.cloudsql_privileged_user_password
         MYSQL_VERSION                     = data.google_sql_database_instance.cloudsql_instance.database_version
         USER                              = each.value.user
+        USER_HOST                         = each.value.user_host
         DATABASE                          = each.value.database
       }
     )
