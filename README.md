@@ -9,6 +9,10 @@ In addition, the script must be able to connect to the CloudSQL instance. In cas
 1. Start an instance of [CloudSQL Auth Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy), for this purpose two null resources will be created for each user added to the database, enabling this option requires the [presence of the proxy executable](https://cloud.google.com/sql/docs/mysql/sql-proxy) in the filesystem where `terraform apply` is executed.
 2. Connect from a [CloudSQL Auth Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy) instance not present in the filesystem.
 
+###IMPORTANT
+
+CloudSQL Auth Proxy needs the CloudSQL instance to expose a public IP address in order to function.
+
 <!-- BEGIN_TF_DOCS -->
 ## Providers
 
