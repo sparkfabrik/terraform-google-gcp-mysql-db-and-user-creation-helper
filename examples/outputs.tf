@@ -1,6 +1,6 @@
 output "sql_admin_user_creds" {
   sensitive = true
-  value     = {
+  value = {
     admin = google_sql_user.admin_user_mysql.password
   }
 }
