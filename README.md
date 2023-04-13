@@ -18,9 +18,9 @@ CloudSQL Auth Proxy needs the CloudSQL instance to expose a public IP address in
 
 | Name | Version |
 |------|---------|
-| <a name="provider_google"></a> [google](#provider\_google) | 4.48.0 |
-| <a name="provider_null"></a> [null](#provider\_null) | 3.2.1 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.4.3 |
+| <a name="provider_google"></a> [google](#provider\_google) | >= 4.47.0 |
+| <a name="provider_null"></a> [null](#provider\_null) | >= 3.2.1 |
+| <a name="provider_random"></a> [random](#provider\_random) | >= 3.4.3 |
 ## Requirements
 
 | Name | Version |
