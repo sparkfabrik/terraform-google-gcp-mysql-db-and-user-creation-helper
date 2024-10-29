@@ -61,20 +61,20 @@ resource "google_sql_user" "sql_user" {
   provisioner "local-exec" {
     command = templatefile(
       "${path.module}/scripts/execute_sql.sh",
-      {
-        CLOUDSDK_CORE_PROJECT             = var.project_id
-        GCLOUD_PROJECT_REGION             = var.region
-        CLOUDSQL_INSTANCE_NAME            = var.cloudsql_instance_name
-        CLOUDSQL_PROXY_HOST               = var.cloudsql_proxy_host
-        CLOUDSQL_PROXY_PORT               = var.cloudsql_proxy_port
-        CLOUDSQL_PRIVILEGED_USER_NAME     = var.cloudsql_privileged_user_name
-        CLOUDSQL_PRIVILEGED_USER_PASSWORD = var.cloudsql_privileged_user_password
-        MYSQL_VERSION                     = data.google_sql_database_instance.cloudsql_instance.database_version
-        USER                              = each.value.user
-        USER_HOST                         = each.value.user_host
-        DATABASE                          = each.value.database
-      }
     )
+    environment = {
+      CLOUDSDK_CORE_PROJECT             = var.project_id
+      GCLOUD_PROJECT_REGION             = var.region
+      CLOUDSQL_INSTANCE_NAME            = var.cloudsql_instance_name
+      CLOUDSQL_PROXY_HOST               = var.cloudsql_proxy_host
+      CLOUDSQL_PROXY_PORT               = var.cloudsql_proxy_port
+      CLOUDSQL_PRIVILEGED_USER_NAME     = var.cloudsql_privileged_user_name
+      CLOUDSQL_PRIVILEGED_USER_PASSWORD = var.cloudsql_privileged_user_password
+      MYSQL_VERSION                     = data.google_sql_database_instance.cloudsql_instance.database_version
+      USER                              = each.value.user
+      USER_HOST                         = each.value.user_host
+      DATABASE                          = each.value.database
+    }
     interpreter = [
       "/bin/sh", "-c"
     ]
