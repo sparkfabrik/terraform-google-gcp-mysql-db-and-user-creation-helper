@@ -59,9 +59,7 @@ resource "google_sql_user" "sql_user" {
   host     = each.value.user_host
 
   provisioner "local-exec" {
-    command = templatefile(
-      "${path.module}/scripts/execute_sql.sh",
-    )
+    command = "${path.module}/scripts/execute_sql.sh"
     environment = {
       CLOUDSDK_CORE_PROJECT             = var.project_id
       GCLOUD_PROJECT_REGION             = var.region
