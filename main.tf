@@ -3,16 +3,14 @@ resource "null_resource" "execute_cloud_sql_proxy" {
     for u in var.database_and_user_list : u.user => u
   } : {})
   provisioner "local-exec" {
-    command = templatefile(
-      "${path.module}/scripts/execute_cloud_sql_proxy.sh",
-      {
-        CLOUDSDK_CORE_PROJECT  = var.project_id
-        CLOUDSQL_PROXY_HOST    = var.cloudsql_proxy_host
-        CLOUDSQL_PROXY_PORT    = var.cloudsql_proxy_port
-        GCLOUD_PROJECT_REGION  = var.region
-        CLOUDSQL_INSTANCE_NAME = var.cloudsql_instance_name
-      }
-    )
+    command = "${path.module}/scripts/execute_cloud_sql_proxy.sh"
+    environment = {
+      CLOUDSDK_CORE_PROJECT  = var.project_id
+      CLOUDSQL_PROXY_HOST    = var.cloudsql_proxy_host
+      CLOUDSQL_PROXY_PORT    = var.cloudsql_proxy_port
+      GCLOUD_PROJECT_REGION  = var.region
+      CLOUDSQL_INSTANCE_NAME = var.cloudsql_instance_name
+    }
     interpreter = [
       "/bin/sh", "-c"
     ]
