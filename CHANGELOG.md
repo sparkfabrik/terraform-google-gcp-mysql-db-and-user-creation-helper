@@ -7,6 +7,12 @@ and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.3.2] - 2024-10-30
+
+### Changed
+
+- Fix accidental mysql credential exposure.
+
 ## [0.3.1] - 2023-04-14
 
 ### Changed

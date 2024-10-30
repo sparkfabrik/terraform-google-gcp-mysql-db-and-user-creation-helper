@@ -20,13 +20,13 @@ for j in $(seq 1 10); do
 done
 
 if [ "$READY" -eq 0 ]; then
-    %{~ if trimspace(MYSQL_VERSION) == "MYSQL_5_7" }
+    if [ "$MYSQL_VERSION" = "MYSQL_5_7" ]; then
     mysql --host=${CLOUDSQL_PROXY_HOST} --port=${CLOUDSQL_PROXY_PORT} --user=${CLOUDSQL_PRIVILEGED_USER_NAME} --password=${CLOUDSQL_PRIVILEGED_USER_PASSWORD} --execute="REVOKE ALL PRIVILEGES, GRANT OPTION FROM '${USER}'@'${USER_HOST}'; GRANT ALL ON ${DATABASE}.* TO ${USER}@'${USER_HOST}';"
-    %{ endif ~}
+    fi
 
-    %{~ if trimspace(MYSQL_VERSION) == "MYSQL_8_0" }
+    if [ "$MYSQL_VERSION" = "MYSQL_8_0" ]; then
     mysql --host=${CLOUDSQL_PROXY_HOST} --port=${CLOUDSQL_PROXY_PORT} --user=${CLOUDSQL_PRIVILEGED_USER_NAME} --password=${CLOUDSQL_PRIVILEGED_USER_PASSWORD} --execute="REVOKE cloudsqlsuperuser FROM '${USER}'@'${USER_HOST}'; GRANT ALL ON ${DATABASE}.* TO ${USER}@'${USER_HOST}';"
-    %{ endif ~}
+    fi
 
     exit 0
 else
