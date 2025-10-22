@@ -25,8 +25,8 @@ data "google_sql_database_instance" "cloudsql_instance" {
   lifecycle {
 
     postcondition {
-      condition     = startswith(self.database_version, "MYSQL_5_7") || startswith(self.database_version, "MYSQL_8_0")
-      error_message = "Database version must be \"MYSQL_5_7\" or \"MYSQL_8_0\". Other versions are not supported."
+      condition     = startswith(self.database_version, "MYSQL_5_7") || startswith(self.database_version, "MYSQL_8_0") || startswith(self.database_version, "MYSQL_8_4")
+      error_message = "Database version must be \"MYSQL_5_7\" or \"MYSQL_8_0\" or \"MYSQL_8_4\". Other versions are not supported."
     }
   }
 }
