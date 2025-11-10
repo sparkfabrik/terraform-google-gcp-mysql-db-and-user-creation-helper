@@ -48,16 +48,16 @@ variable "database_and_user_list" {
     user_host = optional(string, "%")
     database  = string
   }))
-  description = "The list with all the databases and the relative user. Please not that you can assign only a database to a single user, the same user cannot be assigned to multiple databases. `user_host` is optional, has a default value of '%' to allow the user to connect from any host, or you can specify it for the given user for a more restrictive access."
+  description = "The list with all the databases and the relative user. Please note that you can assign only a database to a single user, the same user cannot be assigned to multiple databases. `user_host` is optional, has a default value of '%' to allow the user to connect from any host, or you can specify it for the given user for a more restrictive access."
 }
 
 variable "permissions_refresh_id" {
   type        = string
   default     = ""
-  description = "Optional identifier (use format YYYYMMDD, e.g. 20251110) used only to force Terraform to rerun the proxy/grant scripts without recreating users. Change the value whenever you need to reapply permissions."
+  description = "Optional identifier (use format YYYYMMDD or YYYYMMDDHHMM, e.g. 20251110 or 202511101030) used only to force Terraform to rerun the proxy/grant scripts without recreating users. Change the value whenever you need to reapply permissions."
 
   validation {
-    condition     = var.permissions_refresh_id == "" || can(regex("^\\d{8}$", var.permissions_refresh_id))
-    error_message = "Set permissions_refresh_id to an 8-digit date in the form YYYYMMDD (e.g. 20251110) or leave it empty."
+    condition     = var.permissions_refresh_id == "" || can(regex("^\\d{8}(\\d{4})?$", var.permissions_refresh_id))
+    error_message = "Set permissions_refresh_id to an 8-digit date (YYYYMMDD) or a 12-digit date-time (YYYYMMDDHHMM) such as 20251110 or 202511101030, or leave it empty."
   }
 }

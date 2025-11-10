@@ -18,5 +18,5 @@ database_and_user_list = [
   }
 ]
 
-# Bump this value (YYYYMMDD, e.g. 20251110) whenever you need to rerun the proxy/grant scripts without recreating users.
-permissions_refresh_id = "20251110"
+# Bump this value (YYYYMMDD or YYYYMMDDHHMM, e.g. 20251110 or 202511101030) whenever you need to rerun the proxy/grant scripts without recreating users.
+permissions_refresh_id = "202511101030"

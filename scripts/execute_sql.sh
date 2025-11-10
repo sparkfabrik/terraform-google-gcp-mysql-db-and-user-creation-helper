@@ -11,6 +11,14 @@ log() {
     printf '[sql-grant] %s\n' "${1}"
 }
 
+mysql_exec() {
+    MYSQL_PWD="${CLOUDSQL_PRIVILEGED_USER_PASSWORD}" mysql \
+        --host="${CLOUDSQL_PROXY_HOST}" \
+        --port="${CLOUDSQL_PROXY_PORT}" \
+        --user="${CLOUDSQL_PRIVILEGED_USER_NAME}" \
+        "$@"
+}
+
 if ! [ -x "$(command -v mysql)" ]; then
     log "Error: the mysql client is not installed or is not in your path. Please add the mysql client executable." >&2
     exit 1
@@ -41,7 +49,17 @@ if [ "$READY" -eq 0 ]; then
             SQL_COMMANDS="REVOKE ALL PRIVILEGES, GRANT OPTION FROM ${USER_IDENTIFIER}; GRANT ALL PRIVILEGES ON ${DATABASE_IDENTIFIER} TO ${USER_IDENTIFIER};"
             ;;
         MYSQL_8_0*|MYSQL_8_4*)
-            SQL_COMMANDS="REVOKE cloudsqlsuperuser FROM ${USER_IDENTIFIER}; SET DEFAULT ROLE NONE TO ${USER_IDENTIFIER}; GRANT ALL PRIVILEGES ON ${DATABASE_IDENTIFIER} TO ${USER_IDENTIFIER};"
+            if ! REVOKE_OUTPUT=$(mysql_exec --execute="REVOKE cloudsqlsuperuser FROM ${USER_IDENTIFIER};" 2>&1); then
+                if printf '%s' "${REVOKE_OUTPUT}" | grep -qi "Operation REVOKE ROLE failed"; then
+                    log "cloudsqlsuperuser role already absent for ${USER_IDENTIFIER}; continuing."
+                else
+                    log "ERROR: Failed to revoke cloudsqlsuperuser role for ${USER_IDENTIFIER}:\n${REVOKE_OUTPUT}" >&2
+                    exit 1
+                fi
+            else
+                log "Removed cloudsqlsuperuser role from ${USER_IDENTIFIER}."
+            fi
+            SQL_COMMANDS="SET DEFAULT ROLE NONE TO ${USER_IDENTIFIER}; GRANT ALL PRIVILEGES ON ${DATABASE_IDENTIFIER} TO ${USER_IDENTIFIER};"
             ;;
         *)
             log "ERROR: Unsupported MySQL version ${MYSQL_VERSION}." >&2
@@ -51,7 +69,7 @@ if [ "$READY" -eq 0 ]; then
 
     printf '[sql-grant] Executing SQL statements:\n%s\n' "${SQL_COMMANDS}"
 
-    if ! MYSQL_PWD="${CLOUDSQL_PRIVILEGED_USER_PASSWORD}" mysql --host="${CLOUDSQL_PROXY_HOST}" --port="${CLOUDSQL_PROXY_PORT}" --user="${CLOUDSQL_PRIVILEGED_USER_NAME}" --execute="${SQL_COMMANDS}"; then
+    if ! mysql_exec --execute="${SQL_COMMANDS}"; then
         log "ERROR: Failed to apply privileges for ${USER_IDENTIFIER} on ${DATABASE}." >&2
         exit 1
     fi

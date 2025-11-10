@@ -75,7 +75,7 @@ module "mysql_additional_users_and_databases" {
   project_id             = var.project_id
   region                 = var.region
   database_and_user_list = var.database_and_user_list
-  # Change this value (use YYYYMMDD, e.g. 20251110) whenever you need to rerun the proxy/grant scripts without recreating users.
+  # Change this value (use YYYYMMDD or YYYYMMDDHHMM, e.g. 20251110 or 202511101030) whenever you need to rerun the proxy/grant scripts without recreating users.
   permissions_refresh_id            = var.permissions_refresh_id
   cloudsql_instance_name            = google_sql_database_instance.instance.name
   cloudsql_privileged_user_name     = google_sql_user.admin_user_mysql.name

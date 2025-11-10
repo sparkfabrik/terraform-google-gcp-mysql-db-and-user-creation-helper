@@ -23,5 +23,5 @@ variable "database_and_user_list" {
 variable "permissions_refresh_id" {
   type        = string
   default     = ""
-  description = "Change this date (YYYYMMDD, e.g. 20251110) to force rerunning the proxy/grant scripts."
+  description = "Change this date or date-time (YYYYMMDD or YYYYMMDDHHMM, e.g. 20251110 or 202511101030) to force rerunning the proxy/grant scripts."
 }
