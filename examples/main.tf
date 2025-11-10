@@ -70,11 +70,13 @@ resource "google_sql_user" "admin_user_mysql" {
 
 # Add additional user and database using this this module.
 module "mysql_additional_users_and_databases" {
-  source                            = "sparkfabrik/gcp-mysql-db-and-user-creation-helper/sparkfabrik"
-  version                           = "~> 0.1"
-  project_id                        = var.project_id
-  region                            = var.region
-  database_and_user_list            = var.database_and_user_list
+  source                 = "sparkfabrik/gcp-mysql-db-and-user-creation-helper/sparkfabrik"
+  version                = "~> 0.1"
+  project_id             = var.project_id
+  region                 = var.region
+  database_and_user_list = var.database_and_user_list
+  # Change this value (use YYYYMMDD, e.g. 20251110) whenever you need to rerun the proxy/grant scripts without recreating users.
+  permissions_refresh_id            = var.permissions_refresh_id
   cloudsql_instance_name            = google_sql_database_instance.instance.name
   cloudsql_privileged_user_name     = google_sql_user.admin_user_mysql.name
   cloudsql_privileged_user_password = google_sql_user.admin_user_mysql.password

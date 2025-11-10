@@ -19,3 +19,9 @@ variable "database_and_user_list" {
     database = string
   }))
 }
+
+variable "permissions_refresh_id" {
+  type        = string
+  default     = ""
+  description = "Change this date (YYYYMMDD, e.g. 20251110) to force rerunning the proxy/grant scripts."
+}
