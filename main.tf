@@ -2,6 +2,11 @@ resource "null_resource" "execute_cloud_sql_proxy" {
   for_each = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? {
     for u in var.database_and_user_list : u.user => u
   } : {})
+
+  triggers = {
+    refresh_id = var.permissions_refresh_id
+  }
+
   lifecycle {
     replace_triggered_by = [
       null_resource.force_permissions_refresh.id
@@ -117,6 +122,11 @@ resource "null_resource" "kill_cloud_sql_proxy" {
   for_each = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? {
     for u in var.database_and_user_list : u.user => u
   } : {})
+
+  triggers = {
+    refresh_id = var.permissions_refresh_id
+  }
+
   lifecycle {
     replace_triggered_by = [
       null_resource.force_permissions_refresh.id
