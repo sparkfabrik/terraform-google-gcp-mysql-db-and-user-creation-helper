@@ -8,7 +8,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-11-11
+
+[Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.5.0...0.5.1)
+
+### Changed
+
+- Ensure the `execute_cloud_sql_proxy` and `kill_cloud_sql_proxy` null resources pick up `permissions_refresh_id` changes so Terraform always restarts/stops the proxy when permissions are reapplied.
+- Enforce the start → grant → stop execution order by wiring the proxy/grant null resources through explicit dependencies.
+
 ## [0.5.0] - 2025-11-11
+
+[Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.4.1...0.5.0)
 
 ### Added
 
