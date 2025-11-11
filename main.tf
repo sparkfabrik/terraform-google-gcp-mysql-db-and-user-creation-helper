@@ -2,6 +2,11 @@ resource "null_resource" "execute_cloud_sql_proxy" {
   for_each = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? {
     for u in var.database_and_user_list : u.user => u
   } : {})
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.force_permissions_refresh.id
+    ]
+  }
   provisioner "local-exec" {
     command = "${path.module}/scripts/execute_cloud_sql_proxy.sh"
     environment = {
@@ -55,6 +60,31 @@ resource "google_sql_user" "sql_user" {
   name     = each.value.user
   password = random_password.sql_user_password[each.value.user].result
   host     = each.value.user_host
+  depends_on = [
+    google_sql_database.sql_database
+  ]
+}
+
+resource "null_resource" "force_permissions_refresh" {
+  triggers = {
+    refresh_id = var.permissions_refresh_id
+  }
+}
+
+resource "null_resource" "grant_permissions" {
+  for_each = { for u in var.database_and_user_list : u.user => u }
+
+  triggers = {
+    user      = each.key
+    user_host = each.value.user_host
+    database  = each.value.database
+  }
+
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.force_permissions_refresh.id
+    ]
+  }
 
   provisioner "local-exec" {
     command = "${path.module}/scripts/execute_sql.sh"
@@ -74,10 +104,12 @@ resource "google_sql_user" "sql_user" {
     interpreter = [
       "/bin/sh", "-c"
     ]
-    when = create
   }
+
   depends_on = [
-    google_sql_database.sql_database
+    google_sql_database.sql_database,
+    google_sql_user.sql_user,
+    null_resource.execute_cloud_sql_proxy
   ]
 }
 
@@ -85,6 +117,11 @@ resource "null_resource" "kill_cloud_sql_proxy" {
   for_each = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? {
     for u in var.database_and_user_list : u.user => u
   } : {})
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.force_permissions_refresh.id
+    ]
+  }
   provisioner "local-exec" {
     command = "${path.module}/scripts/kill_cloud_sql_proxy.sh"
     interpreter = [
@@ -94,6 +131,7 @@ resource "null_resource" "kill_cloud_sql_proxy" {
   }
   depends_on = [
     google_sql_database.sql_database,
-    google_sql_user.sql_user
+    google_sql_user.sql_user,
+    null_resource.grant_permissions
   ]
 }

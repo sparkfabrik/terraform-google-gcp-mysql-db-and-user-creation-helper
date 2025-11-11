@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.5.0] - 2025-11-11
+
+### Added
+
+- Introduced the `permissions_refresh_id` input plus the `null_resource.force_permissions_refresh`/`null_resource.grant_permissions` helpers so you can rerun the proxy/grant scripts without recreating users.
+
+### Changed
+
+- Reworked the resource lifecycles so proxy start/kill and permission scripts are re-executed whenever `permissions_refresh_id` changes.
+- Hardened the Cloud SQL proxy helper scripts: better logging, explicit dependency checks (mysql/nc/proxy), use of the v2 proxy CLI syntax, and safer shutdown handling.
+- Enhanced `execute_sql.sh` so MySQL 8.0/8.4 users have the `cloudsqlsuperuser` role removed, default roles cleared, and only database-scoped privileges granted.
+- Documentation updates: clarify Cloud SQL Auth Proxy v2 requirement, mention MySQL 8.4 support.
+
 ## [0.4.1] - 2025-02-24
 
 [Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.4.0...0.4.1)
