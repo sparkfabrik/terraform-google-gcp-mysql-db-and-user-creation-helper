@@ -14,7 +14,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Fix MySQL 8.0/8.4 provisioning failure caused by `Access Denied` (error 1045) on `REVOKE cloudsqlsuperuser`. The script now performs a `SHOW GRANTS` pre-check to verify whether the role is assigned before attempting the revoke, avoiding errors when the admin user lacks `ROLE_ADMIN` privileges.
+- Fix MySQL 8.0/8.4 provisioning failure caused by `Access Denied` (error 1045) on `SHOW GRANTS` and `REVOKE cloudsqlsuperuser`. On Cloud SQL MySQL 8.4, `activate_all_roles_on_login` is `OFF` and the admin's default role may not be initialized until after the first interactive login. The script now prepends `SET ROLE ALL;` to every MySQL statement to explicitly activate the `ROLE_ADMIN` privilege in each connection. Additionally, a `SHOW GRANTS` pre-check verifies whether the `cloudsqlsuperuser` role is assigned before attempting the revoke, and `SET DEFAULT ROLE NONE` is only executed when the role was actually revoked.
 
 ## [0.5.1] - 2025-11-11
 
