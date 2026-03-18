@@ -53,14 +53,18 @@ if [ "$READY" -eq 0 ]; then
             # before attempting REVOKE, to avoid Access Denied (1045) errors when
             # the admin user lacks ROLE_ADMIN privileges.
             if ! GRANTS_OUTPUT=$(mysql_exec --execute="SHOW GRANTS FOR ${USER_IDENTIFIER};" 2>&1); then
-                log "ERROR: Failed to retrieve grants for ${USER_IDENTIFIER}:\n${GRANTS_OUTPUT}" >&2
+                log "ERROR: Failed to retrieve grants for ${USER_IDENTIFIER}."
+                log "${GRANTS_OUTPUT}" >&2
                 exit 1
             fi
 
-            if printf '%s' "${GRANTS_OUTPUT}" | grep -qi "cloudsqlsuperuser"; then
+            HAS_SUPERUSER_ROLE=false
+            if printf '%s' "${GRANTS_OUTPUT}" | grep -qi "GRANT 'cloudsqlsuperuser'"; then
+                HAS_SUPERUSER_ROLE=true
                 log "cloudsqlsuperuser role found for ${USER_IDENTIFIER}; revoking."
                 if ! REVOKE_OUTPUT=$(mysql_exec --execute="REVOKE cloudsqlsuperuser FROM ${USER_IDENTIFIER};" 2>&1); then
-                    log "ERROR: Failed to revoke cloudsqlsuperuser role for ${USER_IDENTIFIER}:\n${REVOKE_OUTPUT}" >&2
+                    log "ERROR: Failed to revoke cloudsqlsuperuser role for ${USER_IDENTIFIER}."
+                    log "${REVOKE_OUTPUT}" >&2
                     exit 1
                 fi
                 log "Removed cloudsqlsuperuser role from ${USER_IDENTIFIER}."
@@ -68,7 +72,11 @@ if [ "$READY" -eq 0 ]; then
                 log "cloudsqlsuperuser role not found for ${USER_IDENTIFIER}; skipping REVOKE."
             fi
 
-            SQL_COMMANDS="SET DEFAULT ROLE NONE TO ${USER_IDENTIFIER}; GRANT ALL PRIVILEGES ON ${DATABASE_IDENTIFIER} TO ${USER_IDENTIFIER};"
+            if [ "${HAS_SUPERUSER_ROLE}" = true ]; then
+                SQL_COMMANDS="SET DEFAULT ROLE NONE TO ${USER_IDENTIFIER}; GRANT ALL PRIVILEGES ON ${DATABASE_IDENTIFIER} TO ${USER_IDENTIFIER};"
+            else
+                SQL_COMMANDS="GRANT ALL PRIVILEGES ON ${DATABASE_IDENTIFIER} TO ${USER_IDENTIFIER};"
+            fi
             ;;
         *)
             log "ERROR: Unsupported MySQL version ${MYSQL_VERSION}." >&2
