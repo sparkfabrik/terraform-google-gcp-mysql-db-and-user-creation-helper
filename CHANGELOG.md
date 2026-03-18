@@ -8,6 +8,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-03-18
+
+[Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.5.1...0.5.2)
+
+### Fixed
+
+- Fix MySQL 8.0/8.4 provisioning failure caused by `Access Denied` (error 1045) on `REVOKE cloudsqlsuperuser`. The script now performs a `SHOW GRANTS` pre-check to verify whether the role is assigned before attempting the revoke, avoiding errors when the admin user lacks `ROLE_ADMIN` privileges.
+
 ## [0.5.1] - 2025-11-11
 
 [Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.5.0...0.5.1)

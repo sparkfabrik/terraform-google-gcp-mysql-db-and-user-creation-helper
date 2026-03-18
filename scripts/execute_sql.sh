@@ -49,16 +49,25 @@ if [ "$READY" -eq 0 ]; then
             SQL_COMMANDS="REVOKE ALL PRIVILEGES, GRANT OPTION FROM ${USER_IDENTIFIER}; GRANT ALL PRIVILEGES ON ${DATABASE_IDENTIFIER} TO ${USER_IDENTIFIER};"
             ;;
         MYSQL_8_0*|MYSQL_8_4*)
-            if ! REVOKE_OUTPUT=$(mysql_exec --execute="REVOKE cloudsqlsuperuser FROM ${USER_IDENTIFIER};" 2>&1); then
-                if printf '%s' "${REVOKE_OUTPUT}" | grep -qi "Operation REVOKE ROLE failed"; then
-                    log "cloudsqlsuperuser role already absent for ${USER_IDENTIFIER}; continuing."
-                else
+            # Pre-check: verify whether the user has the cloudsqlsuperuser role
+            # before attempting REVOKE, to avoid Access Denied (1045) errors when
+            # the admin user lacks ROLE_ADMIN privileges.
+            if ! GRANTS_OUTPUT=$(mysql_exec --execute="SHOW GRANTS FOR ${USER_IDENTIFIER};" 2>&1); then
+                log "ERROR: Failed to retrieve grants for ${USER_IDENTIFIER}:\n${GRANTS_OUTPUT}" >&2
+                exit 1
+            fi
+
+            if printf '%s' "${GRANTS_OUTPUT}" | grep -qi "cloudsqlsuperuser"; then
+                log "cloudsqlsuperuser role found for ${USER_IDENTIFIER}; revoking."
+                if ! REVOKE_OUTPUT=$(mysql_exec --execute="REVOKE cloudsqlsuperuser FROM ${USER_IDENTIFIER};" 2>&1); then
                     log "ERROR: Failed to revoke cloudsqlsuperuser role for ${USER_IDENTIFIER}:\n${REVOKE_OUTPUT}" >&2
                     exit 1
                 fi
-            else
                 log "Removed cloudsqlsuperuser role from ${USER_IDENTIFIER}."
+            else
+                log "cloudsqlsuperuser role not found for ${USER_IDENTIFIER}; skipping REVOKE."
             fi
+
             SQL_COMMANDS="SET DEFAULT ROLE NONE TO ${USER_IDENTIFIER}; GRANT ALL PRIVILEGES ON ${DATABASE_IDENTIFIER} TO ${USER_IDENTIFIER};"
             ;;
         *)
