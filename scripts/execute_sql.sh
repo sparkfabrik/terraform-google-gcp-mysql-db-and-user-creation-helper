@@ -67,7 +67,7 @@ if [ "$READY" -eq 0 ]; then
             fi
 
             HAS_SUPERUSER_ROLE=false
-            if printf '%s' "${GRANTS_OUTPUT}" | grep -qi "GRANT 'cloudsqlsuperuser'"; then
+            if printf '%s' "${GRANTS_OUTPUT}" | grep -qi "cloudsqlsuperuser"; then
                 HAS_SUPERUSER_ROLE=true
                 log "cloudsqlsuperuser role found for ${USER_IDENTIFIER}; revoking."
                 if ! REVOKE_OUTPUT=$(mysql_exec --execute="${ROLE_PREFIX} REVOKE cloudsqlsuperuser FROM ${USER_IDENTIFIER};" 2>&1); then
