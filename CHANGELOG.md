@@ -8,6 +8,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-04-17
+
+[Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.5.2...0.5.3)
+
+### Fixed
+
+- Fix `cloudsqlsuperuser` role not being revoked on Cloud SQL MySQL 8.4. The `SHOW GRANTS` output uses backtick-quoted identifiers (`` GRANT `cloudsqlsuperuser`@`%` ``), but the grep pattern was matching single-quoted identifiers (`GRANT 'cloudsqlsuperuser'`), causing the pre-check to always report the role as absent and skip the REVOKE.
+
 ## [0.5.2] - 2026-03-18
 
 [Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.5.1...0.5.2)
