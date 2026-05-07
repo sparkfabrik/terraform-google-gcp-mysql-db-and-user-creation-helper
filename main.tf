@@ -1,7 +1,5 @@
 resource "null_resource" "execute_cloud_sql_proxy" {
-  for_each = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? {
-    for u in var.database_and_user_list : u.user => u
-  } : {})
+  count = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? 1 : 0)
 
   triggers = {
     refresh_id = var.permissions_refresh_id
@@ -100,7 +98,7 @@ resource "null_resource" "grant_permissions" {
       CLOUDSQL_PROXY_HOST               = var.cloudsql_proxy_host
       CLOUDSQL_PROXY_PORT               = var.cloudsql_proxy_port
       CLOUDSQL_PRIVILEGED_USER_NAME     = var.cloudsql_privileged_user_name
-      CLOUDSQL_PRIVILEGED_USER_PASSWORD = var.cloudsql_privileged_user_password
+      CLOUDSQL_PRIVILEGED_USER_PASSWORD = nonsensitive(var.cloudsql_privileged_user_password)
       MYSQL_VERSION                     = data.google_sql_database_instance.cloudsql_instance.database_version
       USER                              = each.value.user
       USER_HOST                         = each.value.user_host
@@ -119,9 +117,7 @@ resource "null_resource" "grant_permissions" {
 }
 
 resource "null_resource" "kill_cloud_sql_proxy" {
-  for_each = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? {
-    for u in var.database_and_user_list : u.user => u
-  } : {})
+  count = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? 1 : 0)
 
   triggers = {
     refresh_id = var.permissions_refresh_id

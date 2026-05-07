@@ -19,32 +19,25 @@ else
     exit 1
 fi
 
-if ! command -v nc >/dev/null 2>&1; then
-    log "Error: Netcat is not installed." >&2
-    exit 1
-fi
-
 CONNECTION_NAME="${CLOUDSDK_CORE_PROJECT}:${GCLOUD_PROJECT_REGION}:${CLOUDSQL_INSTANCE_NAME}"
+PROXY_LOG_FILE=$(mktemp /tmp/cloudsql-proxy-XXXXXX.log)
 
 if ! pgrep -x "$CLOUDSQL_PROXY_BIN" >/dev/null; then
     log "Starting Cloud SQL Auth Proxy (${CLOUDSQL_PROXY_BIN}) for ${CONNECTION_NAME} on localhost:${CLOUDSQL_PROXY_PORT}."
-    "${CLOUDSQL_PROXY_BIN}" "${CONNECTION_NAME}" --port "${CLOUDSQL_PROXY_PORT}" >/dev/null 2>&1 &
-    sleep 1s
+    "${CLOUDSQL_PROXY_BIN}" "${CONNECTION_NAME}" --port "${CLOUDSQL_PROXY_PORT}" >"${PROXY_LOG_FILE}" 2>&1 &
+    PROXY_PID=$!
+    sleep 2s
+
+    # Check if the proxy process is still running after startup.
+    if ! kill -0 "${PROXY_PID}" 2>/dev/null; then
+        log "ERROR: Cloud SQL Auth Proxy exited immediately. Logs:"
+        cat "${PROXY_LOG_FILE}" >&2
+        rm -f "${PROXY_LOG_FILE}"
+        exit 1
+    fi
+    log "Cloud SQL Auth Proxy started (PID: ${PROXY_PID})."
 else
     log "Cloud SQL Auth Proxy already running; skipping start."
 fi
 
-for j in $(seq 1 10); do
-    READY=$(sh -c 'nc -v ${CLOUDSQL_PROXY_HOST} ${CLOUDSQL_PROXY_PORT} </dev/null; echo $?;' 2>/dev/null)
-    if [ "$READY" -eq 0 ]; then
-        log "Connection with Cloud SQL Auth Proxy established at ${CLOUDSQL_PROXY_HOST}:${CLOUDSQL_PROXY_PORT}."
-        break
-    fi
-    log "Waiting for Cloud SQL Proxy to start (attempt ${j}/10)..."
-    sleep 1s
-done
-
-if [ "$READY" -ne 0 ]; then
-    log "ERROR: cannot connect to the Cloud SQL Auth Proxy at ${CLOUDSQL_PROXY_HOST}:${CLOUDSQL_PROXY_PORT}, please check your settings." >&2
-    exit 1
-fi
+rm -f "${PROXY_LOG_FILE}"

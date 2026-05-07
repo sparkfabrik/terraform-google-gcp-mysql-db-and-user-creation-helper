@@ -8,6 +8,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-05-07
+
+[Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.5.3...0.5.4)
+
+### Changed
+
+- Replace `nc` (netcat) readiness check with a real MySQL `SELECT 1` query in `execute_sql.sh`. The previous TCP-only check could report the Cloud SQL Auth Proxy as ready before the end-to-end MySQL connection was actually established, causing `ERROR 2013 (HY000): Lost connection to server at 'handshake'` failures. The script now waits for a successful MySQL round-trip before proceeding.
+- Remove `nc` (netcat) dependency from both `execute_sql.sh` and `execute_cloud_sql_proxy.sh`; only the `mysql` client is required.
+- Increase retry interval from 1s to 2s to give the proxy more time to establish the tunnel.
+- Log the Cloud SQL instance name on successful connection for easier debugging.
+- Redirect Cloud SQL Auth Proxy output to a temporary log file instead of `/dev/null` and add crash detection: if the proxy exits immediately after startup, the script now logs the proxy output and fails fast.
+- Use `nonsensitive()` for the privileged user password in the `grant_permissions` provisioner environment so that Terraform no longer suppresses all provisioner output in CI/CD pipelines. The scripts never print the password in logs.
+- Mark `cloudsql_privileged_user_password` variable as `sensitive = true` for correct Terraform handling across all supported versions.
+
+### Fixed
+
+- Fix race condition in `execute_cloud_sql_proxy` and `kill_cloud_sql_proxy`: change from `for_each` (one resource per user) to `count` (single resource). Previously, multiple parallel proxy start/kill attempts could cause port conflicts or "process not found" errors when provisioning multiple database users.
+
 ## [0.5.3] - 2026-04-17
 
 [Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.5.2...0.5.3)
