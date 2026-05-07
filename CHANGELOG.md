@@ -27,6 +27,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Fix race condition in `execute_cloud_sql_proxy` and `kill_cloud_sql_proxy`: change from `for_each` (one resource per user) to `count` (single resource). Previously, multiple parallel proxy start/kill attempts could cause port conflicts or "process not found" errors when provisioning multiple database users.
 - Fix `kill_cloud_sql_proxy.sh` silently failing when multiple `cloud_sql_proxy` processes exist. The script now uses a port-scoped PID file and only stops the proxy instance it manages, leaving unrelated proxy processes untouched.
 - Fix `execute_cloud_sql_proxy.sh` incorrectly skipping proxy start when an unrelated `cloud_sql_proxy` process is running on a different port. The script now uses a port-scoped PID file (`/tmp/cloudsql-proxy-<PORT>.pid`) and an instance file (`/tmp/cloudsql-proxy-<PORT>.instance`) to track the proxy. If a proxy is already running on the same port but for a different CloudSQL instance, the script exits with an explicit error to prevent silent misrouting of SQL queries.
+- Fix stale PID handling in proxy scripts. The module now validates that a live PID really belongs to the expected `cloud_sql_proxy` process for the configured instance and port before reusing or terminating it.
 
 ### Upgrade notes
 

@@ -11,6 +11,31 @@ log() {
     printf '[sql-proxy] %s\n' "${1}"
 }
 
+get_process_command() {
+    ps -p "${1}" -o command= 2>/dev/null || true
+}
+
+process_matches_expected_proxy() {
+    PROCESS_COMMAND=$(get_process_command "${1}")
+
+    [ -n "${PROCESS_COMMAND}" ] || return 1
+
+    case "${PROCESS_COMMAND}" in
+        *"cloud_sql_proxy"*) ;;
+        *) return 1 ;;
+    esac
+
+    case "${PROCESS_COMMAND}" in
+        *"${CONNECTION_NAME}"*) ;;
+        *) return 1 ;;
+    esac
+
+    case "${PROCESS_COMMAND}" in
+        *"--port ${CLOUDSQL_PROXY_PORT}"*|*"--port=${CLOUDSQL_PROXY_PORT}"*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 CLOUDSQL_PROXY_BIN=""
 if command -v cloud_sql_proxy >/dev/null 2>&1; then
     CLOUDSQL_PROXY_BIN="cloud_sql_proxy"
@@ -29,16 +54,31 @@ ALREADY_RUNNING=false
 if [ -f "${PID_FILE}" ]; then
     EXISTING_PID=$(cat "${PID_FILE}")
     if kill -0 "${EXISTING_PID}" 2>/dev/null; then
-        # Verify the running proxy is connected to the expected instance.
-        if [ -f "${INSTANCE_FILE}" ]; then
-            RUNNING_INSTANCE=$(cat "${INSTANCE_FILE}")
-            if [ "${RUNNING_INSTANCE}" != "${CONNECTION_NAME}" ]; then
-                log "ERROR: Port ${CLOUDSQL_PROXY_PORT} is already in use by a proxy connected to '${RUNNING_INSTANCE}', but this module requires '${CONNECTION_NAME}'."
-                log "Use a different 'cloudsql_proxy_port' for each CloudSQL instance."
-                exit 1
+        if process_matches_expected_proxy "${EXISTING_PID}"; then
+            if [ -f "${INSTANCE_FILE}" ]; then
+                RUNNING_INSTANCE=$(cat "${INSTANCE_FILE}")
+                if [ "${RUNNING_INSTANCE}" != "${CONNECTION_NAME}" ]; then
+                    log "WARNING: Instance metadata in ${INSTANCE_FILE} is stale; refreshing it."
+                    echo "${CONNECTION_NAME}" > "${INSTANCE_FILE}"
+                fi
+            else
+                echo "${CONNECTION_NAME}" > "${INSTANCE_FILE}"
             fi
+            ALREADY_RUNNING=true
+        else
+            PROCESS_COMMAND=$(get_process_command "${EXISTING_PID}")
+            case "${PROCESS_COMMAND}" in
+                *"cloud_sql_proxy"*--port\ ${CLOUDSQL_PROXY_PORT}*|*"cloud_sql_proxy"*--port=${CLOUDSQL_PROXY_PORT}*)
+                    log "ERROR: Port ${CLOUDSQL_PROXY_PORT} is already in use by a different Cloud SQL Auth Proxy process."
+                    log "Expected '${CONNECTION_NAME}', found command: ${PROCESS_COMMAND}"
+                    log "Use a different 'cloudsql_proxy_port' for each CloudSQL instance."
+                    exit 1
+                    ;;
+            esac
+
+            log "WARNING: Stale PID metadata found in ${PID_FILE}; ignoring PID ${EXISTING_PID}."
+            rm -f "${PID_FILE}" "${INSTANCE_FILE}"
         fi
-        ALREADY_RUNNING=true
     fi
 fi
 
