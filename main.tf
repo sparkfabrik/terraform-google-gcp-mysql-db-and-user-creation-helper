@@ -130,6 +130,9 @@ resource "null_resource" "kill_cloud_sql_proxy" {
   }
   provisioner "local-exec" {
     command = "${path.module}/scripts/kill_cloud_sql_proxy.sh"
+    environment = {
+      CLOUDSQL_PROXY_PORT = var.cloudsql_proxy_port
+    }
     interpreter = [
       "/bin/sh", "-c"
     ]
