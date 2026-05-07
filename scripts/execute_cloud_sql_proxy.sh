@@ -39,5 +39,3 @@ if ! pgrep -x "$CLOUDSQL_PROXY_BIN" >/dev/null; then
 else
     log "Cloud SQL Auth Proxy already running; skipping start."
 fi
-
-rm -f "${PROXY_LOG_FILE}"
