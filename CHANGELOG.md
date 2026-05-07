@@ -26,6 +26,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Fix race condition in `execute_cloud_sql_proxy` and `kill_cloud_sql_proxy`: change from `for_each` (one resource per user) to `count` (single resource). Previously, multiple parallel proxy start/kill attempts could cause port conflicts or "process not found" errors when provisioning multiple database users.
 
+### Upgrade notes
+
+Upgrading from `0.5.x` to `0.6.0` changes `execute_cloud_sql_proxy` and `kill_cloud_sql_proxy` from `for_each` to `count`. On the first `terraform apply`, Terraform will destroy the old `for_each`-keyed resources and recreate them as `count`-indexed. This is safe — these are `null_resource` provisioners that only start and stop the Cloud SQL Auth Proxy. No database, user, or grant is affected.
+
 ## [0.5.3] - 2026-04-17
 
 [Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.5.2...0.5.3)
