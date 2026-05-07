@@ -22,20 +22,17 @@ mysql_exec() {
 if ! [ -x "$(command -v mysql)" ]; then
     log "Error: the mysql client is not installed or is not in your path. Please add the mysql client executable." >&2
     exit 1
-elif ! [ -x "$(command -v nc)" ]; then
-    log "Error: Netcat is not installed." >&2
-    exit 1
 fi
 
+READY=1
 for j in $(seq 1 10); do
-    READY=$(sh -c 'nc -v ${CLOUDSQL_PROXY_HOST} ${CLOUDSQL_PROXY_PORT} </dev/null; echo $?;' 2>/dev/null)
-
-    if [ "$READY" -eq 0 ]; then
-        log "Connection with CloudSQL Auth Proxy established at ${CLOUDSQL_PROXY_HOST}:${CLOUDSQL_PROXY_PORT}."
+    if mysql_exec --execute="SELECT 1;" >/dev/null 2>&1; then
+        READY=0
+        log "Connection with CloudSQL Auth Proxy established at ${CLOUDSQL_PROXY_HOST}:${CLOUDSQL_PROXY_PORT} (instance: ${CLOUDSQL_INSTANCE_NAME})."
         break
     fi
-    log "Waiting for Cloud SQL Proxy to start (attempt ${j}/10)..."
-    sleep 1s
+    log "Waiting for Cloud SQL Proxy to be ready (attempt ${j}/10)..."
+    sleep 2s
 done
 
 if [ "$READY" -eq 0 ]; then
