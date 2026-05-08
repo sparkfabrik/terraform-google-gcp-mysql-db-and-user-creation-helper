@@ -22,20 +22,26 @@ mysql_exec() {
 if ! [ -x "$(command -v mysql)" ]; then
     log "Error: the mysql client is not installed or is not in your path. Please add the mysql client executable." >&2
     exit 1
-elif ! [ -x "$(command -v nc)" ]; then
-    log "Error: Netcat is not installed." >&2
-    exit 1
 fi
 
+READY=1
+LAST_MYSQL_ERROR=""
 for j in $(seq 1 10); do
-    READY=$(sh -c 'nc -v ${CLOUDSQL_PROXY_HOST} ${CLOUDSQL_PROXY_PORT} </dev/null; echo $?;' 2>/dev/null)
-
-    if [ "$READY" -eq 0 ]; then
-        log "Connection with CloudSQL Auth Proxy established at ${CLOUDSQL_PROXY_HOST}:${CLOUDSQL_PROXY_PORT}."
+    if LAST_MYSQL_ERROR=$(mysql_exec --execute="SELECT 1;" 2>&1 >/dev/null); then
+        READY=0
+        log "Connection with CloudSQL Auth Proxy established at ${CLOUDSQL_PROXY_HOST}:${CLOUDSQL_PROXY_PORT} (instance: ${CLOUDSQL_INSTANCE_NAME})."
         break
     fi
-    log "Waiting for Cloud SQL Proxy to start (attempt ${j}/10)..."
-    sleep 1s
+    # Fail fast on authentication errors instead of retrying uselessly.
+    case "${LAST_MYSQL_ERROR}" in
+        *"Access denied"*|*"1045"*)
+            log "ERROR: authentication failed (wrong credentials?). MySQL output:" >&2
+            log "${LAST_MYSQL_ERROR}" >&2
+            exit 1
+            ;;
+    esac
+    log "Waiting for Cloud SQL Proxy to be ready (attempt ${j}/10)..."
+    sleep 2s
 done
 
 if [ "$READY" -eq 0 ]; then
@@ -104,5 +110,8 @@ if [ "$READY" -eq 0 ]; then
     exit 0
 else
     log "ERROR: cannot connect to the CloudSQL Auth Proxy at ${CLOUDSQL_PROXY_HOST}:${CLOUDSQL_PROXY_PORT}, please check your settings." >&2
+    if [ -n "${LAST_MYSQL_ERROR}" ]; then
+        log "Last MySQL error: ${LAST_MYSQL_ERROR}" >&2
+    fi
     exit 1
 fi

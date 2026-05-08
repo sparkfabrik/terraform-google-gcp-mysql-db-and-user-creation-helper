@@ -8,6 +8,28 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-07
+
+[Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.5.3...0.6.0)
+
+### Changed
+
+- Replace `nc` (netcat) readiness check with a direct MySQL `SELECT 1` query in `execute_sql.sh`; remove `nc` dependency from all scripts.
+- Increase retry interval from 1s to 2s and add fail-fast on authentication errors (`Access denied`). The last MySQL error is included in the failure message.
+- Redirect Cloud SQL Auth Proxy output to a port-scoped log file (`/tmp/cloudsql-proxy-<PORT>.log`) with crash detection on startup.
+- Use `nonsensitive()` for the privileged user password in the `grant_permissions` provisioner so Terraform does not suppress all provisioner output. The scripts never print the password.
+- Mark `cloudsql_privileged_user_password` variable as `sensitive = true`.
+
+### Fixed
+
+- Change `execute_cloud_sql_proxy` and `kill_cloud_sql_proxy` from `for_each` to `count` (single resource) gated on `length(var.database_and_user_list) > 0`. Fixes race conditions when provisioning multiple users in parallel.
+- Add `user_list` trigger so the proxy is recreated when users are added/removed, fixing proxy not starting in ephemeral CI containers where the process no longer exists but the Terraform state still holds the resource.
+- Rewrite proxy management to use port-scoped PID files (`/tmp/cloudsql-proxy-<PORT>.pid`). The scripts now validate that a live PID belongs to the expected proxy (correct instance + port) before reusing or terminating it, and exit with a clear error if the port is occupied by a different instance.
+
+### Upgrade notes
+
+Upgrading from `0.5.x` to `0.6.0` changes `execute_cloud_sql_proxy` and `kill_cloud_sql_proxy` from `for_each` to `count`. On the first `terraform apply`, Terraform will destroy the old `for_each`-keyed resources and recreate them as `count`-indexed. This is safe — these are `null_resource` provisioners that only start and stop the Cloud SQL Auth Proxy. No database, user, or grant is affected.
+
 ## [0.5.3] - 2026-04-17
 
 [Compare with previous version](https://github.com/sparkfabrik/terraform-google-gcp-mysql-db-and-user-creation-helper/compare/0.5.2...0.5.3)
