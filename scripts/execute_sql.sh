@@ -25,12 +25,21 @@ if ! [ -x "$(command -v mysql)" ]; then
 fi
 
 READY=1
+LAST_MYSQL_ERROR=""
 for j in $(seq 1 10); do
-    if mysql_exec --execute="SELECT 1;" >/dev/null 2>&1; then
+    if LAST_MYSQL_ERROR=$(mysql_exec --execute="SELECT 1;" 2>&1 >/dev/null); then
         READY=0
         log "Connection with CloudSQL Auth Proxy established at ${CLOUDSQL_PROXY_HOST}:${CLOUDSQL_PROXY_PORT} (instance: ${CLOUDSQL_INSTANCE_NAME})."
         break
     fi
+    # Fail fast on authentication errors instead of retrying uselessly.
+    case "${LAST_MYSQL_ERROR}" in
+        *"Access denied"*|*"1045"*)
+            log "ERROR: authentication failed (wrong credentials?). MySQL output:"
+            log "${LAST_MYSQL_ERROR}"
+            exit 1
+            ;;
+    esac
     log "Waiting for Cloud SQL Proxy to be ready (attempt ${j}/10)..."
     sleep 2s
 done
@@ -101,5 +110,8 @@ if [ "$READY" -eq 0 ]; then
     exit 0
 else
     log "ERROR: cannot connect to the CloudSQL Auth Proxy at ${CLOUDSQL_PROXY_HOST}:${CLOUDSQL_PROXY_PORT}, please check your settings." >&2
+    if [ -n "${LAST_MYSQL_ERROR}" ]; then
+        log "Last MySQL error: ${LAST_MYSQL_ERROR}" >&2
+    fi
     exit 1
 fi

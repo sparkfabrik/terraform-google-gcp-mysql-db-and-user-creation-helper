@@ -31,15 +31,16 @@ process_matches_expected_proxy() {
     esac
 
     case "${PROCESS_COMMAND}" in
-        *"--port ${CLOUDSQL_PROXY_PORT:-1234}"*|*"--port=${CLOUDSQL_PROXY_PORT:-1234}"*) return 0 ;;
+        *"--port ${CLOUDSQL_PROXY_PORT}"*|*"--port=${CLOUDSQL_PROXY_PORT}"*) return 0 ;;
         *) return 1 ;;
     esac
 }
 
+CLOUDSQL_PROXY_PORT="${CLOUDSQL_PROXY_PORT:-1234}"
 CLOUDSQL_PROXY_BIN="cloud_sql_proxy"
-PID_FILE="/tmp/cloudsql-proxy-${CLOUDSQL_PROXY_PORT:-1234}.pid"
-INSTANCE_FILE="/tmp/cloudsql-proxy-${CLOUDSQL_PROXY_PORT:-1234}.instance"
-LOG_FILE="/tmp/cloudsql-proxy-${CLOUDSQL_PROXY_PORT:-1234}.log"
+PID_FILE="/tmp/cloudsql-proxy-${CLOUDSQL_PROXY_PORT}.pid"
+INSTANCE_FILE="/tmp/cloudsql-proxy-${CLOUDSQL_PROXY_PORT}.instance"
+LOG_FILE="/tmp/cloudsql-proxy-${CLOUDSQL_PROXY_PORT}.log"
 CONNECTION_NAME="${CLOUDSDK_CORE_PROJECT}:${GCLOUD_PROJECT_REGION}:${CLOUDSQL_INSTANCE_NAME}"
 
 if [ -f "${PID_FILE}" ]; then
