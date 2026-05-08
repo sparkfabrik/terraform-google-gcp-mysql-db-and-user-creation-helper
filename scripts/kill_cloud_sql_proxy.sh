@@ -39,6 +39,7 @@ process_matches_expected_proxy() {
 CLOUDSQL_PROXY_BIN="cloud_sql_proxy"
 PID_FILE="/tmp/cloudsql-proxy-${CLOUDSQL_PROXY_PORT:-1234}.pid"
 INSTANCE_FILE="/tmp/cloudsql-proxy-${CLOUDSQL_PROXY_PORT:-1234}.instance"
+LOG_FILE="/tmp/cloudsql-proxy-${CLOUDSQL_PROXY_PORT:-1234}.log"
 CONNECTION_NAME="${CLOUDSDK_CORE_PROJECT}:${GCLOUD_PROJECT_REGION}:${CLOUDSQL_INSTANCE_NAME}"
 
 if [ -f "${PID_FILE}" ]; then
@@ -54,7 +55,7 @@ if [ -f "${PID_FILE}" ]; then
     else
         log "PID ${PID} from ${PID_FILE} is no longer running; nothing to stop."
     fi
-    rm -f "${PID_FILE}" "${INSTANCE_FILE}"
+    rm -f "${PID_FILE}" "${INSTANCE_FILE}" "${LOG_FILE}"
 elif pgrep -x "$CLOUDSQL_PROXY_BIN" >/dev/null; then
     log "Detected running ${CLOUDSQL_PROXY_BIN} not managed by this module (no PID file); skipping."
 else

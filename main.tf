@@ -1,5 +1,5 @@
 resource "null_resource" "execute_cloud_sql_proxy" {
-  count = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? 1 : 0)
+  count = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy && length(var.database_and_user_list) > 0) ? 1 : 0)
 
   triggers = {
     refresh_id = var.permissions_refresh_id
@@ -117,7 +117,7 @@ resource "null_resource" "grant_permissions" {
 }
 
 resource "null_resource" "kill_cloud_sql_proxy" {
-  count = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy) ? 1 : 0)
+  count = (((var.cloudsql_proxy_host == "localhost" || var.cloudsql_proxy_host == "127.0.0.1") && var.terraform_start_cloud_sql_proxy && length(var.database_and_user_list) > 0) ? 1 : 0)
 
   triggers = {
     refresh_id = var.permissions_refresh_id
