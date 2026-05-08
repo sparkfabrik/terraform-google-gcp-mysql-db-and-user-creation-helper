@@ -22,6 +22,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Use `nonsensitive()` for the privileged user password in the `grant_permissions` provisioner environment so that Terraform no longer suppresses all provisioner output in CI/CD pipelines. The scripts never print the password in logs.
 - Mark `cloudsql_privileged_user_password` variable as `sensitive = true` for correct Terraform handling across all supported versions.
 - Add default port fallback (`:-1234`) in `execute_cloud_sql_proxy.sh` for consistency with `kill_cloud_sql_proxy.sh`.
+- Add fail-fast detection for authentication errors (`Access denied`) in `execute_sql.sh` readiness loop instead of retrying for ~20s on wrong credentials. The last MySQL error is now included in the failure message.
 
 ### Fixed
 
