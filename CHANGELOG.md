@@ -14,22 +14,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Replace `nc` (netcat) readiness check with a real MySQL `SELECT 1` query in `execute_sql.sh`. The previous TCP-only check could report the Cloud SQL Auth Proxy as ready before the end-to-end MySQL connection was actually established, causing `ERROR 2013 (HY000): Lost connection to server at 'handshake'` failures. The script now waits for a successful MySQL round-trip before proceeding.
-- Remove `nc` (netcat) dependency from both `execute_sql.sh` and `execute_cloud_sql_proxy.sh`; only the `mysql` client is required.
-- Increase retry interval from 1s to 2s to give the proxy more time to establish the tunnel.
-- Log the Cloud SQL instance name on successful connection for easier debugging.
-- Redirect Cloud SQL Auth Proxy output to a deterministic, port-scoped log file (`/tmp/cloudsql-proxy-<PORT>.log`) instead of `/dev/null` and add crash detection: if the proxy exits immediately after startup, the script now logs the proxy output and fails fast. The log file is cleaned up by `kill_cloud_sql_proxy.sh`.
-- Use `nonsensitive()` for the privileged user password in the `grant_permissions` provisioner environment so that Terraform no longer suppresses all provisioner output in CI/CD pipelines. The scripts never print the password in logs.
-- Mark `cloudsql_privileged_user_password` variable as `sensitive = true` for correct Terraform handling across all supported versions.
-- Add default port fallback (`:-1234`) in `execute_cloud_sql_proxy.sh` for consistency with `kill_cloud_sql_proxy.sh`.
-- Add fail-fast detection for authentication errors (`Access denied`) in `execute_sql.sh` readiness loop instead of retrying for ~20s on wrong credentials. The last MySQL error is now included in the failure message.
+- Replace `nc` (netcat) readiness check with a direct MySQL `SELECT 1` query in `execute_sql.sh`; remove `nc` dependency from all scripts.
+- Increase retry interval from 1s to 2s and add fail-fast on authentication errors (`Access denied`). The last MySQL error is included in the failure message.
+- Redirect Cloud SQL Auth Proxy output to a port-scoped log file (`/tmp/cloudsql-proxy-<PORT>.log`) with crash detection on startup.
+- Use `nonsensitive()` for the privileged user password in the `grant_permissions` provisioner so Terraform does not suppress all provisioner output. The scripts never print the password.
+- Mark `cloudsql_privileged_user_password` variable as `sensitive = true`.
 
 ### Fixed
 
-- Fix race condition in `execute_cloud_sql_proxy` and `kill_cloud_sql_proxy`: change from `for_each` (one resource per user) to `count` (single resource). The proxy resources are now also gated on `length(var.database_and_user_list) > 0` to avoid unnecessary proxy start/stop when no users are being provisioned. Previously, multiple parallel proxy start/kill attempts could cause port conflicts or "process not found" errors when provisioning multiple database users.
-- Fix `kill_cloud_sql_proxy.sh` silently failing when multiple `cloud_sql_proxy` processes exist. The script now uses a port-scoped PID file and only stops the proxy instance it manages, leaving unrelated proxy processes untouched.
-- Fix `execute_cloud_sql_proxy.sh` incorrectly skipping proxy start when an unrelated `cloud_sql_proxy` process is running on a different port. The script now uses a port-scoped PID file (`/tmp/cloudsql-proxy-<PORT>.pid`) and an instance file (`/tmp/cloudsql-proxy-<PORT>.instance`) to track the proxy. If a proxy is already running on the same port but for a different CloudSQL instance, the script exits with an explicit error to prevent silent misrouting of SQL queries.
-- Fix stale PID handling in proxy scripts. The module now validates that a live PID really belongs to the expected `cloud_sql_proxy` process for the configured instance and port before reusing or terminating it.
+- Change `execute_cloud_sql_proxy` and `kill_cloud_sql_proxy` from `for_each` to `count` (single resource) gated on `length(var.database_and_user_list) > 0`. Fixes race conditions when provisioning multiple users in parallel.
+- Add `user_list` trigger so the proxy is recreated when users are added/removed, fixing proxy not starting in ephemeral CI containers where the process no longer exists but the Terraform state still holds the resource.
+- Rewrite proxy management to use port-scoped PID files (`/tmp/cloudsql-proxy-<PORT>.pid`). The scripts now validate that a live PID belongs to the expected proxy (correct instance + port) before reusing or terminating it, and exit with a clear error if the port is occupied by a different instance.
 
 ### Upgrade notes
 
