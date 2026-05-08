@@ -35,8 +35,8 @@ for j in $(seq 1 10); do
     # Fail fast on authentication errors instead of retrying uselessly.
     case "${LAST_MYSQL_ERROR}" in
         *"Access denied"*|*"1045"*)
-            log "ERROR: authentication failed (wrong credentials?). MySQL output:"
-            log "${LAST_MYSQL_ERROR}"
+            log "ERROR: authentication failed (wrong credentials?). MySQL output:" >&2
+            log "${LAST_MYSQL_ERROR}" >&2
             exit 1
             ;;
     esac
